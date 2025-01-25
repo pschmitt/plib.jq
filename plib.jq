@@ -79,3 +79,24 @@ def strpaths(with_values):
   end;
 
 def strpaths: strpaths(false);
+
+def ellipsize(max_length; style):
+  "…" as $ellipsis |
+  . as $text |
+  if ($text | length) > max_length then
+    if style == "middle" then
+      ((max_length - 3) / 2 | floor) as $half
+      | $text[0:$half] + $ellipsis + $text[-$half:]
+    else
+      (max_length - 3) as $start
+      | $text[0:$start] + $ellipsis
+    end
+  else
+    $text
+  end;
+
+def ellipsize(max_length):
+  ellipsize(max_length; "end");
+
+def ellipsize:
+  ellipsize(40; "end");
