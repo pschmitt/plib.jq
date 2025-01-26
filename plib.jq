@@ -100,3 +100,30 @@ def ellipsize(max_length):
 
 def ellipsize:
   ellipsize(40; "end");
+
+# re-order keys followint the order of a provided array
+# usage:
+# $ DATA=$(gh pr list --repo NixOS/nixpkgs --json url,state,number,title)
+# $ jq -er --argjson cols '["title","state","url"]' \
+#   'map(p::reorder_keys($cols))' <<< "$DATA"
+def reorder_keys(cols):
+  . as $og
+
+  # keys our og object actually has
+  | ($og | keys_unsorted) as $actual_keys
+  # leftover = any keys that are not in $cols
+  | ($actual_keys - cols) as $leftovers
+  # final order = desired keys first, then leftovers
+  | (cols + $leftovers) as $all_keys
+  # Build a new object with the keys in the desired order
+  | reduce $all_keys[] as $k (
+      {};
+      . + (
+        if $og | has($k)
+        then
+          { ($k): $og[$k] }
+        else
+          {}
+        end
+      )
+    );
