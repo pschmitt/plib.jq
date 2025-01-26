@@ -127,3 +127,14 @@ def reorder_keys(cols):
         end
       )
     );
+
+# OSC 8 escape sequence (hyperlinks)
+# usage: p::osc8("click me"; "https://example.com")
+def osc8(text; url):
+  # ESC ] 8 ;; <url> BEL <text> ESC ] 8 ;; BEL
+  "\u001B]8;;"
+  + url
+  + "\u0007"
+  + text
+  + "\u001B]8;;"
+  + "\u0007";
