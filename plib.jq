@@ -138,3 +138,25 @@ def osc8(text; url):
   + text
   + "\u001B]8;;"
   + "\u0007";
+
+def age(ts):
+  (now - (ts | fromdate)) as $seconds_diff
+  | if $seconds_diff < 0 then "N/A"
+    else
+      if $seconds_diff < 60 then
+        "\($seconds_diff | floor)s"
+      elif $seconds_diff < 3600 then
+        "\(($seconds_diff / 60 | floor))m"
+      elif $seconds_diff < 86400 then
+        "\(($seconds_diff / 3600 | floor))h"
+      else
+        (($seconds_diff / 86400 | floor)) as $days
+        | if $days >= 365 then
+            (($days / 365) | floor) as $years
+            | ($days % 365) as $remaining_days
+            | (if $remaining_days > 0 then "\($years)y\($remaining_days)d" else "\($years)y" end)
+          else
+            "\($days)d"
+          end
+      end
+    end;
