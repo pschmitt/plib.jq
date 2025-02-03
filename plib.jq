@@ -83,8 +83,11 @@ def strpaths: strpaths(false);
 def ellipsize(max_length; style):
   "…" as $ellipsis |
   . as $text |
-  if ($text | length) > max_length then
-    if style == "middle" then
+
+  if ($text | length) > max_length
+  then
+    if style == "middle"
+    then
       ((max_length - 3) / 2 | floor) as $half
       | $text[0:$half] + $ellipsis + $text[-$half:]
     else
