@@ -88,11 +88,11 @@ def ellipsize(max_length; style):
   then
     if style == "middle"
     then
-      ((max_length - 3) / 2 | floor) as $half
-      | $text[0:$half] + $ellipsis + $text[-$half:]
+      ((max_length - 1) / 2 | floor) as $half
+      | ($text[0:$half] | rtrimstr(" ")) + $ellipsis + ($text[-$half:] | ltrimstr(" "))
     else
-      (max_length - 3) as $start
-      | $text[0:$start] + $ellipsis
+      (max_length - 1) as $start
+      | ($text[0:$start] | rtrimstr(" ")) + $ellipsis
     end
   else
     $text
