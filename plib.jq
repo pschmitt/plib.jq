@@ -163,3 +163,12 @@ def age(ts):
           end
       end
     end;
+
+# convert 255.255.255.0 to /24 etc
+def netmask_to_cidr():
+  (split(".") | map(tonumber) | map(
+    # Convert each octet to its binary representation, count the 1s
+    tostring | tonumber |
+    (256 + .) | tobase(2) | ltrimstr("1") | length
+  )) as $zeros
+  | 32 - ($zeros | add);  # Subtract total zero-bits from 32
