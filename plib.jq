@@ -164,11 +164,29 @@ def age(ts):
       end
     end;
 
-# convert 255.255.255.0 to /24 etc
-def netmask_to_cidr():
-  (split(".") | map(tonumber) | map(
-    # Convert each octet to its binary representation, count the 1s
-    tostring | tonumber |
-    (256 + .) | tobase(2) | ltrimstr("1") | length
-  )) as $zeros
-  | 32 - ($zeros | add);  # Subtract total zero-bits from 32
+# helper func for mask_to_cidr
+def to_binary:
+  def digits:
+    recurse(if . >= 2 then ./2 | floor else empty end) | . % 2;
+  [digits] | reverse | join("") | if length < 8 then "0" * (8 - length) + . else . end;
+
+# convert a subnet mask to a CIDR
+# eg: "255.255.255.0" | mask_to_cidr -> 24
+def netmask_to_cidr:
+  split(".") | map(tonumber)
+  | reduce .[] as $octet (
+    {cidr: 0, done: false};
+    if .done
+    then
+      .
+    else
+      if $octet == 255
+      then
+        {cidr: (.cidr + 8), done: false}
+      else
+        ($octet | to_binary | split("0")[0] | length) as $bits
+        | {cidr: (.cidr + $bits), done: true}
+      end
+    end
+  )
+  | .cidr;
