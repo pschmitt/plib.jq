@@ -80,23 +80,45 @@ def strpaths(with_values):
 
 def strpaths: strpaths(false);
 
-def ellipsize(max_length; style):
-  "…" as $ellipsis |
-  . as $text |
+def has_var(var_name):
+  $ARGS.named | has(var_name);
 
-  if ($text | length) > max_length
+# Return value of var if defined, otherwise the provided default value
+def var_get(var_name; default):
+  if has_var(var_name)
   then
-    if style == "middle"
-    then
-      ((max_length - 1) / 2 | floor) as $half
-      | ($text[0:$half] | rtrimstr(" ")) + $ellipsis + ($text[-$half:] | ltrimstr(" "))
-    else
-      (max_length - 1) as $start
-      | ($text[0:$start] | rtrimstr(" ")) + $ellipsis
-    end
+    $ARGS.named[var_name]
   else
-    $text
+    default
   end;
+
+def var_get(var_name):
+  var_get(var_name, null);
+
+def ellipsize(max_length; style):
+  if (var_get("NO_ELLIPSIS"; false))
+  then
+    # Return the string as is if NO_ELLIPSIS is set to a truthy value
+    .
+  else
+    "…" as $ellipsis |
+    . as $text |
+
+    if ($text | length) > max_length
+    then
+      if style == "middle"
+      then
+        ((max_length - 1) / 2 | floor) as $half
+        | ($text[0:$half] | rtrimstr(" ")) + $ellipsis + ($text[-$half:] | ltrimstr(" "))
+      else
+        (max_length - 1) as $start
+        | ($text[0:$start] | rtrimstr(" ")) + $ellipsis
+      end
+    else
+      $text
+    end
+  end
+  ;
 
 def ellipsize(max_length):
   ellipsize(max_length; "end");
