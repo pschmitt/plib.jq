@@ -217,7 +217,11 @@ def netmask_to_cidr:
 def date_fmt(fmt):
   if (type == "number")
   then
-    todateiso8601 | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime(fmt)
+    localtime | strflocaltime(fmt)
+  elif ((type == "string") and test("^\\d+$"))
+  then
+    # number, but as a string
+    tonumber | localtime | strflocaltime(fmt)
   elif (type == "string")
   then
     # Pattern with milliseconds
@@ -244,9 +248,12 @@ def date_fmt(fmt):
     | mktime
     # Format using the desired format.
     | strflocaltime(fmt)
+  elif (type == "array")
+  then
+    # Here we assume a datetime array
+    strflocaltime(fmt)
   else
-    # raise exception?
-    .
+    "Invalid datetime object provided to date_fmt: '\(.)'\n" | halt_error(1)
   end;
 
 def date_fmt:
