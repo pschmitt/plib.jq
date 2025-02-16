@@ -215,30 +215,39 @@ def netmask_to_cidr:
 
 # example: "2024-04-17T11:38:22.547+02:00" | p::date_fmt("%Y-%m-%d %H:%M:%S %z")
 def date_fmt(fmt):
-  # Pattern with milliseconds
-  # 2021-08-25T14:00:00.123+02:00
-  # 2021-08-25T14:00:00.954944+02:00
-  if test("T\\d{2}:\\d{2}:\\d{2}\\.\\d+")
+  if (type == "number")
   then
-    capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\.(?<ms>\\d+)(?<tz>[+-]\\d{2}):(?<tzmin>\\d{2})$")
-    | "\(.prefix)\(.tz)\(.tzmin)"
-  # Pattern without milliseconds
-  # 2021-08-25T14:00:00+02:00
-  elif test("T\\d{2}:\\d{2}:\\d{2}")
+    todateiso8601 | strptime("%Y-%m-%dT%H:%M:%SZ") | strftime(fmt)
+  elif (type == "string")
   then
-    capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(?<tz>[+-]\\d{2}):(?<tzmin>\\d{2})$")
-    | "\(.prefix)\(.tz)\(.tzmin)"
-  else
-    # No match. Assume the input is already in %Y-%m-%dT%H:%M:%S%z
-    .
-  end
+    # Pattern with milliseconds
+    # 2021-08-25T14:00:00.123+02:00
+    # 2021-08-25T14:00:00.954944+02:00
+    if test("T\\d{2}:\\d{2}:\\d{2}\\.\\d+")
+    then
+      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\.(?<ms>\\d+)(?<tz>[+-]\\d{2}):(?<tzmin>\\d{2})$")
+      | "\(.prefix)\(.tz)\(.tzmin)"
+    # Pattern without milliseconds
+    # 2021-08-25T14:00:00+02:00
+    elif test("T\\d{2}:\\d{2}:\\d{2}")
+    then
+      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(?<tz>[+-]\\d{2}):(?<tzmin>\\d{2})$")
+      | "\(.prefix)\(.tz)\(.tzmin)"
+    else
+      # No match. Assume the input is already in %Y-%m-%dT%H:%M:%S%z
+      .
+    end
 
-   # Parse the input timestamp as UTC.
-  | strptime("%Y-%m-%dT%H:%M:%S%z")
-  # Convert the time array to epoch seconds.
-  | mktime
-  # Format using the desired format.
-  | strflocaltime(fmt);
+    # Parse the input timestamp as UTC.
+    | strptime("%Y-%m-%dT%H:%M:%S%z")
+    # Convert the time array to epoch seconds.
+    | mktime
+    # Format using the desired format.
+    | strflocaltime(fmt)
+  else
+    # raise exception?
+    .
+  end;
 
 def date_fmt:
   date_fmt("%Y-%m-%d %H:%M:%S");
