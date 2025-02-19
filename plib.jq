@@ -227,18 +227,21 @@ def date_fmt(fmt):
     # Pattern with milliseconds
     # 2021-08-25T14:00:00.123+02:00
     # 2021-08-25T14:00:00.954944+02:00
+    # 2021-08-25T14:00:00.954944+0200
     if test("T\\d{2}:\\d{2}:\\d{2}\\.\\d+")
     then
-      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\.(?<ms>\\d+)(?<tz>[+-]\\d{2}):(?<tzmin>\\d{2})$")
+      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\.(?<ms>\\d+)(?<tz>[+-]\\d{2}):?(?<tzmin>\\d{2})$")
       | "\(.prefix)\(.tz)\(.tzmin)"
     # Pattern without milliseconds
     # 2021-08-25T14:00:00+02:00
+    # 2021-08-25T14:00:00+0200
     elif test("T\\d{2}:\\d{2}:\\d{2}")
     then
-      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(?<tz>[+-]\\d{2}):(?<tzmin>\\d{2})$")
+      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(?<tz>[+-]\\d{2}):?(?<tzmin>\\d{2})$")
       | "\(.prefix)\(.tz)\(.tzmin)"
     else
       # No match. Assume the input is already in %Y-%m-%dT%H:%M:%S%z
+      #"Invalid date string provided: '\(.)'\n" | halt_error(1)
       .
     end
 
@@ -253,7 +256,7 @@ def date_fmt(fmt):
     # Here we assume a datetime array
     strflocaltime(fmt)
   else
-    "Invalid datetime object provided to date_fmt: '\(.)'\n" | halt_error(1)
+    "Invalid object provided to date_fmt: '\(.)'\n" | halt_error(1)
   end;
 
 def date_fmt:
