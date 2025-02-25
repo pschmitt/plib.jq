@@ -230,15 +230,26 @@ def date_fmt(fmt):
     # 2021-08-25T14:00:00.954944+0200
     if test("T\\d{2}:\\d{2}:\\d{2}\\.\\d+")
     then
-      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\.(?<ms>\\d+)(?<tz>[+-]\\d{2}):?(?<tzmin>\\d{2})$")
-      | "\(.prefix)\(.tz)\(.tzmin)"
-    # Pattern without milliseconds
-    # 2021-08-25T14:00:00+02:00
-    # 2021-08-25T14:00:00+0200
+      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\.(?<ms>\\d+)(?<tz>Z|[+-]\\d{2}:?\\d{2})")
+      | (
+        if .tz == "Z"
+        then
+          "\(.prefix)+0000"
+        else
+          "\(.prefix)\(.tz | gsub(":"; ""))"
+        end
+      )
     elif test("T\\d{2}:\\d{2}:\\d{2}")
     then
-      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(?<tz>[+-]\\d{2}):?(?<tzmin>\\d{2})$")
-      | "\(.prefix)\(.tz)\(.tzmin)"
+      capture("^(?<prefix>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})(?<tz>Z|[+-]\\d{2}:?\\d{2})")
+      | (
+        if .tz == "Z"
+        then
+          "\(.prefix)+0000"
+        else
+          "\(.prefix)\(.tz | gsub(":"; ""))"
+        end
+      )
     else
       # No match. Assume the input is already in %Y-%m-%dT%H:%M:%S%z
       #"Invalid date string provided: '\(.)'\n" | halt_error(1)
