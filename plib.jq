@@ -96,7 +96,12 @@ def var_get(var_name):
   var_get(var_name, null);
 
 def ellipsize(max_length; style):
-  if (var_get("NO_ELLIPSIS"; false))
+  if (
+    var_get("NO_ELLIPSIS"; false)
+    or (env | has("NO_ELLIPSIS"))
+    or (env | has("WIDE"))
+    or (env | has("VERBATIM"))
+  )
   then
     # Return the string as is if NO_ELLIPSIS is set to a truthy value
     .
