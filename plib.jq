@@ -277,3 +277,29 @@ def date_fmt(fmt):
 
 def date_fmt:
   date_fmt("%Y-%m-%d %H:%M:%S");
+
+def bytes_to_human($append_unit):
+  (. | tonumber) as $bytes
+  | if $bytes < 1024
+    then
+      [$bytes, "B"]
+    elif $bytes < 1048576
+    then
+      [($bytes / 1024) | (. * 10 | round) / 10, "K"]
+    elif $bytes < 1073741824
+    then
+      [($bytes / 1048576) | (. * 10 | round) / 10, "M"]
+    else
+      [($bytes / 1073741824) | (. * 10 | round) / 10, "G"]
+    end
+  | .[0] as $value
+  | .[1] as $unit
+  | if $append_unit
+    then
+      "\($value)\($unit)"
+    else
+      "\($value)"
+    end;
+
+def bytes_to_human:
+  bytes_to_human(true);
