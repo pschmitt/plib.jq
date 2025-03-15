@@ -303,3 +303,8 @@ def bytes_to_human($append_unit):
 
 def bytes_to_human:
   bytes_to_human(true);
+
+# https://stackoverflow.com/a/74152813/1872036
+def round(precision):
+  . * pow(10; precision)
+  | round / pow(10; precision);
