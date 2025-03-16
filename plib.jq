@@ -309,6 +309,9 @@ def round(precision):
   . * pow(10; precision)
   | round / pow(10; precision);
 
+def round:
+  round(2);
+
 def format_number(precision):
   (tostring) as $s
   | if $s | contains(".")
@@ -337,3 +340,6 @@ def round_str(precision):
   else
     error("round: input must be a number or numeric string")
   end;
+
+def round_str:
+  round_str(2);
