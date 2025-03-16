@@ -308,3 +308,32 @@ def bytes_to_human:
 def round(precision):
   . * pow(10; precision)
   | round / pow(10; precision);
+
+def format_number(precision):
+  (tostring) as $s
+  | if $s | contains(".")
+    then
+      ($s | split("."))
+      | .[0] as $int
+      | .[1] as $frac
+      | if ($frac | length) < precision
+        then
+          $int + "." + ($frac + ([range(0; precision - ($frac | length))] | map("0") | join("")))
+        else
+          $int + "." + ($frac[0:precision])
+        end
+    else
+      $s + "." + ([range(0; precision)] | map("0") | join(""))
+    end;
+
+def round_str(precision):
+  if (type == "number" or type == "string")
+  then
+    (if type == "string" then tonumber else . end)
+    * pow(10; precision)
+    | round
+    / pow(10; precision)
+    | format_number(precision)
+  else
+    error("round: input must be a number or numeric string")
+  end;
