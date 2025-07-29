@@ -12,7 +12,7 @@ module {
 
 def getallpaths(cols):
   . as $obj |
-  reduce $cols[] as $col (
+  reduce cols[] as $col (
     {}; . + {
       ($col): $obj | getpath($col / ".")
     }
