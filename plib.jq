@@ -343,3 +343,13 @@ def round_str(precision):
 
 def round_str:
   round_str(2);
+
+# Returns the list of common first-level keys in an array of objects.
+def common_first_level_keys:
+  reduce .[] as $item (
+    null;
+    if . == null
+    then ($item | keys_unsorted)
+    else ([ .[] | select(($item|keys_unsorted) | index(.) != null) ])
+    end
+  );
