@@ -353,3 +353,16 @@ def common_first_level_keys:
     else ([ .[] | select(($item|keys_unsorted) | index(.) != null) ])
     end
   );
+
+# Match prop against a list of regexes.
+# Example:
+# re = ["one", "two"]
+# select(.name | p::match_any($re))
+def match_any($regex):
+  . as $row
+  | [
+    $regex[]
+    | . as $pat
+    | ($row | tostring | test($pat; "i"))
+  ]
+  | any;
