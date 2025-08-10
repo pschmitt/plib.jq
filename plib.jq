@@ -366,3 +366,18 @@ def match_any($regex):
     | ($row | tostring | test($pat; "i"))
   ]
   | any;
+
+
+# Convert weather condition strings to emojis.
+# https://github.com/home-assistant/core/blob/master/homeassistant/components/met/const.py
+def weather_emoji:
+  . as $cond |
+  if ($cond == "sunny") then "☀️"
+  elif ($cond == "cloudy") then "☁️"
+  elif ($cond == "clear-night") then "🌌"
+  elif ($cond == "partlycloudy") then "⛅"
+  elif ($cond | test("snow")) then "🌨️"
+  elif ($cond | test("rain")) then "🌧️"
+  elif ($cond | test("thunder")) then "⛈️"
+  else $cond
+  end;
