@@ -371,13 +371,33 @@ def match_any($regex):
 # Convert weather condition strings to emojis.
 # https://github.com/home-assistant/core/blob/master/homeassistant/components/met/const.py
 def weather_emoji:
-  . as $cond |
-  if ($cond == "sunny") then "☀️"
-  elif ($cond == "cloudy") then "☁️"
-  elif ($cond == "clear-night") then "🌌"
-  elif ($cond == "partlycloudy") then "⛅"
-  elif ($cond | test("snow")) then "🌨️"
-  elif ($cond | test("rain")) then "🌧️"
-  elif ($cond | test("thunder")) then "⛈️"
-  else $cond
-  end;
+  . as $cond
+  | if ($cond == "sunny") then "☀️"
+    elif ($cond == "cloudy") then "☁️"
+    elif ($cond == "clear-night") then "🌌"
+    elif ($cond == "partlycloudy") then "⛅"
+    elif ($cond | test("snow")) then "🌨️"
+    elif ($cond | test("rain")) then "🌧️"
+    elif ($cond | test("thunder")) then "⛈️"
+    else $cond
+    end;
+
+def weather_nf:
+  . as $c
+  | if   $c == "clear-night"     then "\ue32b"  # wi-night-clear
+    elif $c == "cloudy"          then "\ue33d"  # wi-cloudy
+    elif $c == "exceptional"     then "\ue30e"  # wi-meteor (closest 'alert'/exception)
+    elif $c == "fog"             then "\ue313"  # wi-fog
+    elif $c == "hail"            then "\ue314"  # wi-hail
+    elif $c == "lightning"       then "\ue31d"  # wi-lightning
+    elif $c == "lightning-rainy" then "\ue31f"  # wi-thunderstorm
+    elif $c == "partlycloudy"    then "\ue302"  # wi-day-cloudy
+    elif $c == "pouring"         then "\ue319"  # wi-rain-wind
+    elif $c == "rainy"           then "\ue318"  # wi-rain
+    elif $c == "snowy"           then "\ue31a"  # wi-snow
+    elif $c == "snowy-rainy"     then "\ue31b"  # wi-sleet
+    elif $c == "sunny"           then "\ue30d"  # wi-day-sunny
+    elif $c == "windy"           then "\ue321"  # wi-strong-wind
+    elif $c == "windy-variant"   then "\ue321"  # best fit: strong wind (wind + clouds)
+    else $c
+    end;
