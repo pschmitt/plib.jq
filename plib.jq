@@ -95,41 +95,129 @@ def var_get(var_name; default):
 def var_get(var_name):
   var_get(var_name, null);
 
-def ellipsize(max_length; style):
-  if (
-    var_get("NO_ELLIPSIS"; false)
-    or (env | has("NO_ELLIPSIS"))
-    or (env | has("WIDE"))
-    or (env | has("VERBATIM"))
-  )
-  then
-    # Return the string as is if NO_ELLIPSIS is set to a truthy value
-    .
-  else
-    "…" as $ellipsis |
-    . as $text |
+# ===== OSC8-aware ellipsize + helpers =====
 
-    if ($text | length) > max_length
+# Regex for OSC 8 hyperlinks:
+#   ESC ] 8 ;; <url> (BEL|ST) <text> ESC ] 8 ;; (BEL|ST)
+def _osc8_re:
+  "\u001B]8;;(?<url>.*?)(?:\u0007|\u001B\\\\)(?<text>.*?)\u001B]8;;(?:\u0007|\u001B\\\\)";
+
+# Ellipsize while preserving OSC8 sequences; truncates only visible text.
+# End-style truncation is used when OSC8 is present (keeps sequences valid).
+def _ellipsize_preserve_osc8(maxlen):
+  . as $s
+  | ($s | [match(_osc8_re; "g")]) as $ms
+  | if ($ms | length) == 0
     then
-      if style == "middle"
-      then
-        ((max_length - 1) / 2 | floor) as $half
-        | ($text[0:$half] | rtrimstr(" ")) + $ellipsis + ($text[-$half:] | ltrimstr(" "))
-      else
-        (max_length - 1) as $start
-        | ($text[0:$start] | rtrimstr(" ")) + $ellipsis
-      end
+      .
     else
-      $text
+      (reduce $ms[] as $m (
+        {out:"", pos:0, rem:maxlen, done:false};
+        if .done then .
+        else
+          # Plain text before the match
+          ($s[.pos : $m.offset]) as $pre
+          | ($pre | length) as $plen
+          | (if .rem < $plen
+             then {out: .out + ($pre[0:.rem]) + "…", pos:.pos, rem:0, done:true}
+             else {out: .out + $pre, pos:(.pos + $plen), rem:(.rem - $plen), done:false}
+            end) as $st1
+          | if $st1.done then $st1
+            else
+              # The matched OSC8: captures → url, text
+              ($m.captures[0].string) as $u
+              | ($m.captures[1].string) as $t
+              | ($m.offset + $m.length) as $nextpos
+              | if $st1.rem < ($t | length)
+                then
+                  { out: ($st1.out
+                          + "\u001B]8;;" + $u + "\u001B\\"
+                          + ($t[0:$st1.rem])
+                          + "\u001B]8;;\u001B\\"
+                          + "…"),
+                    pos: $nextpos, rem:0, done:true }
+                else
+                  { out: ($st1.out
+                          + "\u001B]8;;" + $u + "\u001B\\"
+                          + $t
+                          + "\u001B]8;;\u001B\\"),
+                    pos: $nextpos, rem:($st1.rem - ($t | length)), done:false }
+                end
+            end
+        end
+      )) as $st
+      | if $st.done
+        then $st.out
+        else
+          # Tail after last match
+          ($s[$st.pos:]) as $tail
+          | if ($tail | length) <= $st.rem
+            then $st.out + $tail
+            else $st.out + ($tail[0:$st.rem]) + "…"
+            end
+        end
+    end;
+
+# Public API: ellipsize with style
+def ellipsize(max_length; style):
+  if (test(_osc8_re)) then
+    # When OSC8 is present, preserve sequences and use end-style truncation
+    _ellipsize_preserve_osc8(max_length)
+  else
+    if (
+      var_get("NO_ELLIPSIS"; false)
+      or (env | has("NO_ELLIPSIS"))
+      or (env | has("WIDE"))
+      or (env | has("VERBATIM"))
+    )
+    then .
+    else
+      "…" as $ellipsis
+      | . as $text
+      | if ($text | length) > max_length
+        then
+          if style == "middle"
+          then
+            ((max_length - 1) / 2 | floor) as $half
+            | ($text[0:$half] | rtrimstr(" "))
+              + $ellipsis
+              + ($text[-$half:] | ltrimstr(" "))
+          else
+            (max_length - 1) as $start
+            | ($text[0:$start] | rtrimstr(" ")) + $ellipsis
+          end
+        else
+          $text
+        end
     end
-  end
-  ;
+  end;
 
-def ellipsize(max_length):
-  ellipsize(max_length; "end");
+def ellipsize(max_length): ellipsize(max_length; "end");
+def ellipsize: ellipsize(40; "end");
 
-def ellipsize:
-  ellipsize(40; "end");
+# ===== OSC8 construction =====
+
+# Safe OSC8 builder
+def osc8(text; url):
+  if (env | has("NO_OSC8")) or (var_get("NO_OSC8"; false))
+  then
+    text
+  else
+    (url | tostring | gsub("[\u0000-\u001F\u007F]"; "")) as $u
+    | (text | tostring) as $raw_t
+    | (if ($raw_t | length) == 0 then $u else $raw_t end) as $t
+    | "\u001B]8;;" + $u + "\u001B\\"
+      + $t
+      + "\u001B]8;;\u001B\\"
+  end;
+
+# Ellipsize + link an input URL
+def osc8_shorten(max_length):
+  . as $url
+  | ($url | ellipsize(max_length)) as $t
+  | osc8($t; $url);
+def osc8_shorten: osc8_shorten(40);
+
 
 # re-order keys followint the order of a provided array
 # usage:
@@ -160,14 +248,26 @@ def reorder_keys(cols):
 
 # OSC 8 escape sequence (hyperlinks)
 # usage: p::osc8("click me"; "https://example.com")
+# - Sanitizes URL (removes control chars)
+# - Ensures non-empty display text (falls back to URL)
+# - Uses ST (ESC \) as the terminator
+# - Respects NO_OSC8 env/var to disable linking
 def osc8(text; url):
-  # ESC ] 8 ;; <url> BEL <text> ESC ] 8 ;; BEL
-  "\u001B]8;;"
-  + url
-  + "\u0007"
-  + text
-  + "\u001B]8;;"
-  + "\u0007";
+  if (env | has("NO_OSC8")) or (var_get("NO_OSC8"; false))
+  then
+    text
+  else
+    # sanitize URL by stripping control chars
+    (url | tostring | gsub("[\u0000-\u001F\u007F]"; "")) as $u
+    # ensure non-empty text; fallback to URL
+    | (text | tostring) as $raw_t
+    | (if ($raw_t | length) == 0 then $u else $raw_t end) as $t
+    # ESC ] 8 ;; <url> ST <text> ESC ] 8 ;; ST
+    | "\u001B]8;;" + $u + "\u001B\\"
+      + $t
+      + "\u001B]8;;\u001B\\"
+  end;
+
 
 # ellipsize + osc8 an URL
 # example: "https://example.com/some/very/long/url" | p::osc8_shorten(40)
