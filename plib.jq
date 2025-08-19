@@ -169,6 +169,14 @@ def osc8(text; url):
   + "\u001B]8;;"
   + "\u0007";
 
+def osc8_shorten(max_length):
+  . as $url
+  | ($url | ellipsize(max_length)) as $t
+  | osc8($t; $url);
+
+def osc8_shorten:
+  osc8_shorten(40);
+
 def age(ts):
   (now - (ts | fromdate)) as $seconds_diff
   | if $seconds_diff < 0 then "N/A"
