@@ -169,6 +169,8 @@ def osc8(text; url):
   + "\u001B]8;;"
   + "\u0007";
 
+# ellipsize + osc8 an URL
+# example: "https://example.com/some/very/long/url" | p::osc8_shorten(40)
 def osc8_shorten(max_length):
   . as $url
   | ($url | ellipsize(max_length)) as $t
