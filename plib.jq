@@ -119,8 +119,8 @@ def _ellipsize_preserve_osc8(maxlen):
           ($s[.pos : $m.offset]) as $pre
           | ($pre | length) as $plen
           | (if .rem < $plen
-             then {out: .out + ($pre[0:.rem]) + "…", pos:.pos, rem:0, done:true}
-             else {out: .out + $pre, pos:(.pos + $plen), rem:(.rem - $plen), done:false}
+             then {out: (.out + ($pre[0:.rem]) + "…"), pos:.pos, rem:0, done:true}
+             else {out: (.out + $pre), pos:(.pos + $plen), rem:(.rem - $plen), done:false}
             end) as $st1
           | if $st1.done then $st1
             else
