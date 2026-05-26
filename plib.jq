@@ -131,16 +131,16 @@ def _ellipsize_preserve_osc8(maxlen):
               | if $st1.rem < ($t | length)
                 then
                   { out: ($st1.out
-                          + "\u001B]8;;" + $u + "\u001B\\"
+                          + "\u001B]8;;" + $u + "\u0007"
                           + ($t[0:$st1.rem])
-                          + "\u001B]8;;\u001B\\"
+                          + "\u001B]8;;\u0007"
                           + "…"),
                     pos: $nextpos, rem:0, done:true }
                 else
                   { out: ($st1.out
-                          + "\u001B]8;;" + $u + "\u001B\\"
+                          + "\u001B]8;;" + $u + "\u0007"
                           + $t
-                          + "\u001B]8;;\u001B\\"),
+                          + "\u001B]8;;\u0007"),
                     pos: $nextpos, rem:($st1.rem - ($t | length)), done:false }
                 end
             end
@@ -206,9 +206,9 @@ def osc8(text; url):
     (url | tostring | gsub("[\u0000-\u001F\u007F]"; "")) as $u
     | (text | tostring) as $raw_t
     | (if ($raw_t | length) == 0 then $u else $raw_t end) as $t
-    | "\u001B]8;;" + $u + "\u001B\\"
+    | "\u001B]8;;" + $u + "\u0007"
       + $t
-      + "\u001B]8;;\u001B\\"
+      + "\u001B]8;;\u0007"
   end;
 
 # Ellipsize + link an input URL
@@ -250,7 +250,7 @@ def reorder_keys(cols):
 # usage: p::osc8("click me"; "https://example.com")
 # - Sanitizes URL (removes control chars)
 # - Ensures non-empty display text (falls back to URL)
-# - Uses ST (ESC \) as the terminator
+# - Uses BEL as the terminator (ST is unsafe through @tsv)
 # - Respects NO_OSC8 env/var to disable linking
 def osc8(text; url):
   if (env | has("NO_OSC8")) or (var_get("NO_OSC8"; false))
@@ -263,9 +263,9 @@ def osc8(text; url):
     | (text | tostring) as $raw_t
     | (if ($raw_t | length) == 0 then $u else $raw_t end) as $t
     # ESC ] 8 ;; <url> ST <text> ESC ] 8 ;; ST
-    | "\u001B]8;;" + $u + "\u001B\\"
+    | "\u001B]8;;" + $u + "\u0007"
       + $t
-      + "\u001B]8;;\u001B\\"
+      + "\u001B]8;;\u0007"
   end;
 
 
